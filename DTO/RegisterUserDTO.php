@@ -36,7 +36,7 @@ public function __construct(array $data){
             throw new Exception('Senha é obrigatória');
         }
 
-        if (strlen($this->senha) < 8) {
+        if (strlen($this->senha) <= 8) {
             throw new Exception('A senha deve ter no mínimo 8 caracteres');
         }
 
