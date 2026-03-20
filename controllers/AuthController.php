@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../models/Usuarios.php';
+require_once __DIR__ . '/../models/Livro.php';
 require_once __DIR__ . '/../utils/jwt.php';
 require_once __DIR__ . '/../DTO/RegisterUserDTO.php';
 require_once __DIR__ . '/../DTO/LoginDTO.php';
@@ -72,16 +73,21 @@ class AuthController
         if (!$usuario || !password_verify($dto->senha, $usuario["senha_hash"])) {
             http_response_code(401);
             echo json_encode(["sucess" => false,
-             "mensagem" => "Senha não confere"]);
+             "mensagem" => "Email ou senha inválidos"]);
             return;
         }
 
-        $token = $this->jwtHandler->gerarToken($usuario);
+        $accessToken = $this->jwtHandler->gerarToken($usuario);
+        $refreshToken = $this->jwtHandler->gerarRefreshToken([
+            "id_usuario" => $usuario["id_usuario"]
+        ]);
 
         http_response_code(200);
         echo json_encode([
+            "success" => true,
             "mensagem" => "Login realizado com sucesso",
-            "token" => $token
+            "access_token" => $accessToken,
+            "refresh_token" => $refreshToken
         ]);
     } catch(Exception $e){
         http_response_code(400);
@@ -92,9 +98,84 @@ class AuthController
     }
 }
 
+public function refresh(): void {
+    try{
+        $data = json_decode(file_get_contents("php://input"), true);
+
+
+        $refreshToken = $data["refresh_token"] ?? null;
+
+        if(!$refreshToken){
+            http_response_code(401);
+            echo json_encode([
+                "success" => false,
+                "mensagem" => "Refresh token não enviado"
+            ]);
+            return;
+        }
+
+        $decoded = $this->jwtHandler->validarToken($refreshToken);
+
+        if (($decoded->type ?? null) !== "refresh"){
+            http_response_code(401);
+            echo json_encode([
+                "success" => false,
+                "mensagem" => "Token invalido para renovação"
+            ]);
+            return;
+            }
+
+            $idUsuario = $decoded->data->id_usuario ?? null;
+
+            if (!$idUsuario){
+                http_response_code(401);
+                echo json_encode([
+                    "success" => false, 
+                    "mensagem" => "Refresh token inválido"
+                ]);
+                return;
+            }
+
+            $usuario = $this->usuarioModel->buscarPorId($usuario);
+
+            if(!$usuario){
+                http_response_code(404);
+                echo json_encode(["success" => false,
+                "mensagem" => "Usuario não encontrado"]);
+                return;
+            }
+
+            $novoAcessToken = $this->jwtHandler->gerarToken($usuario);
+
+            http_response_code(200);
+            echo json_encode([
+                "success" => true,
+                "mensagem" => "Access token renovado com sucesso",
+                "access_token" => $novoAcessToken
+            ]);
+
+    } catch(Exception $e){
+        http_response_code(401);
+        echo json_encode([
+            "success" => false, 
+            "mensagem" => "Refresh token inválido ou expirado"
+        ]);
+    }
+}
+
+
     public function perfil()
     {
         $usuario = AuthMiddleware::autenticar();
+
+        if(($usuario->type ?? null) !== "access"){
+            http_response_code(401);
+            echo json_encode([
+                "success" => false, 
+                "mensagem" => "Token inválido para acesso"
+            ]);
+            return;
+        }
 
         $idUsuario = $usuario->data->id_usuario;
 
@@ -104,4 +185,4 @@ class AuthController
             "usuario" => $usuario->data
         ]);
     }
-
+}

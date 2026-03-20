@@ -21,6 +21,19 @@ class Usuarios
         return $usuario ?: null;
     }
 
+    public function buscarPorId(int $id_usuario): ?array {
+        $query = "select id_usuario, nome, email, senha_hash from {$this->table}
+        where id_usuario = :id_usuario limit 1";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindValue(":id_usuario", $id_usuario, PDO::PARAM_INT);
+        $stmt->execute();
+
+
+        $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $usuario ?: null;
+    }
+
     public function criar(string $nome, string $email, string $senhaHash): bool
     {
         $query = "insert into {$this->table} (nome, email, senha_hash) values (:nome, :email, :senha_hash)";
