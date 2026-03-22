@@ -7,17 +7,24 @@ class Livro {
     public function __construct(PDO $db)
     {
         $this->conn = $db;
+    
     }
 
-    public function criarLivro(string $titulo, string $autor, int $ano, int $idUsuario): bool {
-        $query = "insert into {$this->table} (titulo, autor, ano, usuario_id) values (:titulo, :autor, :ano, :usuario_id)";
+    public function criarLivro(
+        string $titulo, string $autor, int $ano, int $idUsuario, ?string $genero = null, string $status = 'quero_ler', ?int $avaliacao = null, ?string $anotacoes = null): bool {
+        $query = "insert into {$this->table} (titulo, autor, ano, usuario_id, genero, status, avaliacao, anotacoes) values (:titulo, :autor, :ano, :usuario_id, :genero, :status, :avaliacao, :anotacoes)";
 
         $stmt = $this->conn->prepare($query);
 
         $stmt->bindValue(":titulo", $titulo);
         $stmt->bindValue(":autor", $autor);
         $stmt->bindValue(":ano", $ano);
-        $stmt->bindValue(":usuario_id", $idUsuario);
+        $stmt->bindValue(":usuario_id",
+         $idUsuario);
+        $stmt->bindValue(":genero", $genero);
+        $stmt->bindValue(":status", $status);
+        $stmt->bindValue(":avaliacao", $avaliacao);
+        $stmt->bindValue(":anotacoes", $anotacoes);
 
         return $stmt->execute();
     }
@@ -28,6 +35,7 @@ class Livro {
         $stmt = $this->conn->prepare($query);
         $stmt->bindValue(":usuario_id", $idUsuario);
         $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function buscarPorId(int $idLivro, int $idUsuario): ?array {
@@ -43,10 +51,14 @@ class Livro {
         return $livro ?: null;
     }
 
-    public function atualizarLivro(int $idLivro, string $titulo, string $autor, int $ano, int $idUsuario): bool {
+    public function atualizarLivro(int $idLivro, string $titulo, string $autor, int $ano, int $idUsuario, ?string $genero = null, string $status = 'quero_ler', ?int $avaliacao = null, ?string $anotacoes = null): bool {
         $query = "update {$this->table} set titulo = :titulo,
         autor = :autor,
-        ano = :ano
+        ano = :ano,
+        genero = :genero,
+        status = :status,
+        avaliacao = :avaliacao,
+        anotacoes = :anotacoes
         where id_livro = :idLivro
         and usuario_id = :idUsuario";
 
@@ -54,6 +66,10 @@ class Livro {
         $stmt->bindValue(":titulo", $titulo);
         $stmt->bindValue(":autor", $autor);
         $stmt->bindValue(":ano", $ano);
+        $stmt->bindValue(":genero", $genero);
+        $stmt->bindValue(":status", $status);
+        $stmt->bindValue(":avaliacao", $avaliacao === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
+        $stmt->bindValue(":anotacoes", $anotacoes);
         $stmt->bindValue(":idLivro", $idLivro);
         $stmt->bindValue(":idUsuario", $idUsuario);
 
@@ -123,7 +139,7 @@ class Livro {
     $stmtCount->execute();
     $total = (int) $stmtCount->fetch(PDO::FETCH_ASSOC)['total'];
 
-    $sql = "SELECT id_livro, titulo, autor, ano
+    $sql = "SELECT id_livro, titulo, autor, ano, genero, status, avaliacao, anotacoes
             FROM {$this->table}
             {$where}
             ORDER BY {$sort} {$order}

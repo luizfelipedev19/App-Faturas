@@ -11,7 +11,7 @@ class Usuarios
 
     public function buscarPorEmail(string $email): ?array
     {
-        $query = "select id_usuario, nome, email, senha_hash, UUID from {$this->table} where email = :email LIMIT 1";
+        $query = "select id_usuario, nome, email, senha_hash, UUID, foto_perfil from {$this->table} where email = :email LIMIT 1";
         $stmt = $this->conn->prepare($query);
         $stmt->bindValue(":email", $email);
         $stmt->execute();
@@ -44,6 +44,15 @@ class Usuarios
         $stmt->bindValue(":senha_hash", $senhaHash);
         $stmt->bindValue(":uuid", $uuid);
 
+        return $stmt->execute();
+    }
+
+    public function atualizarFoto(int $idUsuario, string $caminhoFoto): bool {
+        $query = "update {$this->table} SET foto_perfil = :foto_perfil where id_usuario = :id_usuario";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindValue(":foto_perfil", $caminhoFoto);
+        $stmt->bindValue(":id_usuario", $idUsuario, PDO::PARAM_INT);
         return $stmt->execute();
     }
 }

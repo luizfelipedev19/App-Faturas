@@ -18,7 +18,7 @@ class ListarLivroDTO {
         $this->page = isset($query['page']) ? (int) $query['page'] : 1;
         $this->limit = isset($query['limit']) ? (int) $query['limit']: 10;
 
-        $this->sort = $query['sort'] ?? 'id';
+        $this->sort = $query['sort'] ?? 'id_livro';
         $this->order= strtolower($query['order'] ?? 'asc');
 
 

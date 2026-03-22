@@ -49,4 +49,11 @@ return [
     "action" => "deletarLivro",
     "auth" => true
     ],
+    [
+    "method" => "PATCH",
+    "path" => "/usuario/foto",
+    "controller" => "UsuarioController",
+    "action" => "atualizarFoto",
+    "auth" => true
+    ]
 ];

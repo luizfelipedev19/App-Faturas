@@ -1,9 +1,10 @@
 <?php
 
 require_once __DIR__ . '/../models/Livro.php';
+require_once __DIR__ . '/../DTO/CreateLivroDTO.php';
 require_once __DIR__ . '/../middleware/AuthMiddleware.php';
 
-class LivroController{ 
+class LivroController { 
 
     private Livro $livroModel;
 
@@ -11,42 +12,55 @@ class LivroController{
         $this->livroModel = new Livro($db);
     }
 
-    public function criarLivro(): void
-    {
+    public function criarLivro(): void {
         $usuario = AuthMiddleware::autenticar();
         $idUsuario = $usuario->data->id_usuario;
 
         $data = json_decode(file_get_contents("php://input"), true) ?? [];
-        $titulo = trim($data["titulo"] ?? "");
 
-        $autor = trim($data["autor"] ?? "");
-        $ano = (int) ($data["ano"] ?? 0);
-
-        if (!$titulo || !$autor || !$ano) {
+        try {
+            $dto = new CreateLivroDTO($data);
+        } catch (Exception $e) {
             http_response_code(400);
-            echo json_encode(["mensagem" => "Titulo, autor e ano são obrigatórios"]);
+            echo json_encode([
+                "success" => false,
+                "mensagem" => $e->getMessage()
+            ]);
             return;
         }
 
-        $criado = $this->livroModel->criarLivro($titulo, $autor, $ano, $idUsuario);
+        $criado = $this->livroModel->criarLivro(
+            $dto->titulo,
+            $dto->autor,
+            $dto->ano,
+            $idUsuario,
+            $dto->genero,
+            $dto->status,
+            $dto->avaliacao,
+            $dto->anotacoes
+        );
 
         if (!$criado) {
-        http_response_code(500);
-        echo json_encode([
-        "success" => false,
-        "mensagem" => "Erro ao criar livro"
-    ]);
-    return;
-}   
+            http_response_code(500);
+            echo json_encode([
+                "success" => false,
+                "mensagem" => "Erro ao criar livro"
+            ]);
+            return;
+        }
+
         http_response_code(201);
         echo json_encode([
             "success" => true,
             "mensagem" => "Livro criado com sucesso",
-            "id_usuario_logado" => $idUsuario,
-            "Livro" => [ 
-                "titulo" => $titulo,
-                "autor" => $autor,
-                "ano" => $ano
+            "livro" => [
+                "titulo"    => $dto->titulo,
+                "autor"     => $dto->autor,
+                "ano"       => $dto->ano,
+                "genero"    => $dto->genero,
+                "status"    => $dto->status,
+                "avaliacao" => $dto->avaliacao,
+                "anotacoes" => $dto->anotacoes
             ]
         ]);
     }
@@ -78,38 +92,28 @@ class LivroController{
 
         $data = json_decode(file_get_contents("php://input"), true) ?? [];
         
-        $titulo = array_key_exists("titulo", $data) ? trim($data["titulo"]) : $livroAtual['titulo'];
-
-        $autor = array_key_exists("autor", $data) ? trim($data["autor"]) : $livroAtual['autor'];
-
-        $ano = array_key_exists("ano", $data) ? (int) $data["ano"] : (int) $livroAtual['ano'];
-
-        if($titulo === ''){
+        try {
+            $dto = new UpdateLivroDTO($data);
+        } catch (Exception $e){
             http_response_code(400);
             echo json_encode([
                 "success" => false,
-                "mensagem" => "Titulo é obrigatório"
-            ]);
-            return;
-        }
-            if($autor === ''){
-            http_response_code(400);
-            echo json_encode([
-                "success" => false,
-                "mensagem" => "Autor é obrigatório"
-            ]);
-            return;
-        }
-            if($ano <= 0){
-            http_response_code(400);
-            echo json_encode([
-                "success" => false,
-                "mensagem" => "Ano é obrigatório"
+                "mensagem" => $e->getMessage()
             ]);
             return;
         }
 
-        $atualizado = $this->livroModel->atualizarLivro((int) $idLivro, $titulo, $autor, $ano, (int) $idUsuario);
+        $atualizado = $this->livroModel->atualizarLivro(
+            (int) $idLivro,
+            $dto->titulo,
+            $dto->autor,
+            $dto->ano,
+            (int) $idUsuario,
+            $dto->genero,
+            $dto->status,
+            $dto->avaliacao,
+            $dto->anotacoes
+        );
 
         if(!$atualizado){
             http_response_code(500);
@@ -125,10 +129,14 @@ class LivroController{
             "success" => true,
             "mensagem" => "Livro atualizado com sucesso",
             "livro" => [
-                "id" => (int) $idLivro,
-                "titulo" => $titulo,
-                "autor" => $autor,
-                "ano" => $ano
+                "id"        => (int) $idLivro,
+                "titulo"    => $dto->titulo ?? $livroAtual['titulo'],
+                "autor"     => $dto->autor ?? $livroAtual['autor'],
+                "ano"       => $dto->ano ?? $livroAtual['ano'],
+                "genero"    => $dto->genero ?? $livroAtual['genero'],
+                "status"    => $dto->status ?? $livroAtual['status'],
+                "avaliacao" => $dto->avaliacao ?? $livroAtual['avaliacao'],
+                "anotacoes" => $dto->anotacoes ?? $livroAtual['anotacoes']
             ]
         ]);
     }
@@ -158,49 +166,34 @@ class LivroController{
             "success" => true,
             "mensagem" => "Livro deletado com sucesso"
         ]);
-
     }
 
-        public function listarLivros(): void {
+    public function listarLivros(): void {
         $usuario = AuthMiddleware::autenticar();
         $idUsuario = $usuario->data->id_usuario;
 
         $titulo = trim($_GET['titulo'] ?? '');
-        $autor = trim($_GET['autor'] ?? '');
-        $ano = isset($_GET['ano']) && $_GET['ano'] !== '' ? (int) $_GET['ano']: null;
+        $autor  = trim($_GET['autor'] ?? '');
+        $ano    = isset($_GET['ano']) && $_GET['ano'] !== '' ? (int) $_GET['ano'] : null;
+        $page   = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+        $limit  = isset($_GET['limit']) ? (int) $_GET['limit'] : 10;
+        $sort   = $_GET['sort'] ?? 'id_livro';
+        $order  = strtolower($_GET['order'] ?? 'asc');
 
-        $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
-        $limit = isset($_GET['limit']) ? (int) $_GET['limit'] : 10;
-
-        $sort = $_GET['sort'] ?? 'id_livro';
-        $order = strtolower($_GET['order'] ?? 'asc');
-
-        if ($page < 1){
-            $page = 1;
-        }
-
-        if ($limit < 1){
-            $limit = 10;
-        }
-        if ($limit > 100){
-            $limit = 100;
-        }
+        if ($page < 1) $page = 1;
+        if ($limit < 1) $limit = 10;
+        if ($limit > 100) $limit = 100;
 
         $allowedSort = ['id_livro', 'titulo', 'autor', 'ano'];
-        if (!in_array($sort, $allowedSort, true)){
-            $sort = 'id_livro';
-        }
-
-        if(!in_array($order, ['asc', 'desc'], true)) {
-            $order = 'asc';
-        }
+        if (!in_array($sort, $allowedSort, true)) $sort = 'id_livro';
+        if (!in_array($order, ['asc', 'desc'], true)) $order = 'asc';
 
         $resultado = $this->livroModel->listarComFiltros(
             $idUsuario,
-            $titulo, 
-            $autor, 
+            $titulo,
+            $autor,
             $ano,
-            $page, 
+            $page,
             $limit,
             $sort,
             $order
@@ -208,26 +201,16 @@ class LivroController{
 
         http_response_code(200);
         echo json_encode([
-            'success' => true,
-            'filtros' => [
-                'titulo' => $titulo,
-                'autor' => $autor, 
-                'ano' => $ano
-            ],
+            'success'   => true,
+            'filtros'   => ['titulo' => $titulo, 'autor' => $autor, 'ano' => $ano],
             'paginacao' => [
-                'page' => $resultado['page'],
-                'limit' => $resultado['limit'],
-                'total' => $resultado['total'],
+                'page'        => $resultado['page'],
+                'limit'       => $resultado['limit'],
+                'total'       => $resultado['total'],
                 'total_pages' => $resultado['total_pages']
             ],
-            'ordenacao' => [
-                'sort' => $sort,
-                'order'=> $order,
-            ],
-            'livros' => $resultado['items']
+            'ordenacao' => ['sort' => $sort, 'order' => $order],
+            'livros'    => $resultado['items']
         ]);
     }
-
 }
-
-

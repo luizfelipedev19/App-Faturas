@@ -91,7 +91,9 @@ class AuthController
             "success" => true,
             "mensagem" => "Login realizado com sucesso",
             "access_token" => $accessToken,
-            "UUID" => $usuario["UUID"]
+            "UUID" => $usuario["UUID"],
+            "nome" => $usuario["nome"],
+            "foto_perfil" => $usuario["foto_perfil"] ?? null
         ]);
 
     } catch(Exception $e){
