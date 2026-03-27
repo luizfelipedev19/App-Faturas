@@ -30,7 +30,7 @@ class SenhaController {
         $usuario = $this->usuarioModel->buscarPorEmail($emailUsuario);
 
         if($usuario){
-            // 🔒 Invalida tokens antigos
+            //  Invalida tokens antigos
             $this->db->prepare("
                 UPDATE senha_recuperacao
                 SET usado = 1
@@ -39,7 +39,7 @@ class SenhaController {
                 'id' => $usuario['id_usuario']
             ]);
 
-            // 🔐 Gera token seguro
+            //  Gerar um token seguro
             $token = bin2hex(random_bytes(32));
             $tokenHash = hash('sha256', $token);
             $expiracao = date('Y-m-d H:i:s', strtotime('+1 hour'));
@@ -56,7 +56,7 @@ class SenhaController {
                 'expira_em' => $expiracao
             ]);
 
-            //  Envia email com token REAL (não hash)
+            //  Envia email com token 
             $this->enviarEmailRecuperacao(
                 $emailUsuario,
                 $usuario['nome'],
@@ -88,7 +88,7 @@ class SenhaController {
             $mail->setFrom($_ENV['MAIL_USER'], 'BookManager');
             $mail->addAddress($email, $nome);
 
-            $linkRecuperacao = "http://192.168.1.74:8082/Front-Biblioteca/redefinir-senha?token=" . $token;
+            $linkRecuperacao = "http://192.168.0.38:8082/Front-Biblioteca/redefinir-senha?token=" . $token;
 
             $mail->isHTML(true);
             $mail->Subject = 'Recuperação de senha - BookManager';
@@ -110,8 +110,6 @@ class SenhaController {
             ";
 
 
-            $mail->SMTPDebug = 2;
-            $mail->Debugoutput = 'html';
             $mail->send();
             return true;
 

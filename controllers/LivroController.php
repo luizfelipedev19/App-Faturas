@@ -68,8 +68,9 @@ class LivroController {
 
     public function atualizarLivro(): void {
         $usuario = AuthMiddleware::autenticar();
-        $idUsuario = $usuario->data->id_usuario;
-        $idLivro = $_GET['id'] ?? null;
+        $uuid = $usuario->data->id_usuario;
+        $idLivro = $_POST['id_livro'] ?? null;
+
 
         if(!$idLivro){
             http_response_code(400);
@@ -80,7 +81,7 @@ class LivroController {
             return;
         }
 
-        $livroAtual = $this->livroModel->buscarPorId((int) $idLivro, $idUsuario);
+        $livroAtual = $this->livroModel->buscarPorId((int) $idLivro, $uuid);
 
         if(!$livroAtual){
             http_response_code(404);

@@ -56,20 +56,20 @@ class Livro {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function buscarPorId(int $idLivro, int $idUsuario): ?array {
+    public function buscarPorId(int $idLivro, int $uuid): ?array {
         $query = "SELECT id_livro, titulo, autor, ano
                   FROM {$this->table}
                   WHERE id_livro = :id_livro
-                  AND usuario_id = :usuario_id
+                  AND usuario_id = (select id_usuario from usuarios where UUID = :uuid)
                   LIMIT 1";
         
         $stmt = $this->conn->prepare($query);
         $stmt->bindValue(":id_livro", $idLivro, PDO::PARAM_INT);
-        $stmt->bindValue(":usuario_id", $idUsuario, PDO::PARAM_INT);
+        $stmt->bindValue(":uuid", $uuid, PDO::PARAM_STR);
         $stmt->execute();
 
         $livro = $stmt->fetch(PDO::FETCH_ASSOC);
-
+ 
         return $livro ?: null;
     }
 
@@ -78,7 +78,7 @@ class Livro {
         string $titulo,
         string $autor,
         int $ano,
-        int $idUsuario,
+        string $uuid,
         ?string $genero = null,
         string $status = 'quero_ler',
         ?int $avaliacao = null,
@@ -93,7 +93,7 @@ class Livro {
             avaliacao = :avaliacao,
             anotacoes = :anotacoes
         WHERE id_livro = :idLivro
-        AND usuario_id = :idUsuario";
+        AND usuario_id = (SELECT id_usuario FROM usuarios WHERE UUID = :uuid)";
 
         $stmt = $this->conn->prepare($query);
 
@@ -112,12 +112,17 @@ class Livro {
 
         $stmt->bindValue(":anotacoes", $anotacoes);
         $stmt->bindValue(":idLivro", $idLivro, PDO::PARAM_INT);
-        $stmt->bindValue(":idUsuario", $idUsuario, PDO::PARAM_INT);
+        $stmt->bindValue(":uuid", $uuid, PDO::PARAM_STR);
 
         $stmt->execute();
 
+
+
         // ✅ MELHORIA: só retorna true se realmente alterou algo
+        echo $stmt->rowCount() > 0;
+        exit;
         return $stmt->rowCount() > 0;
+
     }
 
     public function deletarLivro(int $idLivro, int $idUsuario): bool {
