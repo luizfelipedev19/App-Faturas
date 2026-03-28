@@ -36,7 +36,7 @@ return [
         "auth" => true
     ],
     [
-    "method" => "POST",
+    "method" => "PUT",
     "path" => "/livro/editar",
     "controller" => "LivroController",
     "action" => "atualizarLivro",
@@ -44,7 +44,7 @@ return [
     ],
     [
     "method" => "DELETE",
-    "path" => "/livro",
+    "path" => "/livro/deletar",
     "controller" => "LivroController",
     "action" => "deletarLivro",
     "auth" => true

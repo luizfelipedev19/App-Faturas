@@ -15,9 +15,17 @@ class LivroController {
 
     public function criarLivro(): void {
         $usuario = AuthMiddleware::autenticar();
-        $idUsuario = $usuario->data->id_usuario;
-
+        $uuid = $usuario->data->UUID;
         $data = json_decode(file_get_contents("php://input"), true) ?? [];
+
+        if(!$uuid){
+            http_response_code(401);
+            echo json_encode([
+                "success" => false,
+                "mensagem" => "UUID do usuário não encontrado"
+            ]);
+            return;
+        }
 
         try {
             $dto = new CreateLivroDTO($data);
@@ -30,18 +38,18 @@ class LivroController {
             return;
         }
 
-        $criado = $this->livroModel->criarLivro(
+        $idLivro = $this->livroModel->criarLivro(
             $dto->titulo,
             $dto->autor,
             $dto->ano,
-            $idUsuario,
+            $uuid,
             $dto->genero,
             $dto->status,
             $dto->avaliacao,
             $dto->anotacoes
         );
 
-        if (!$criado) {
+        if (!$idLivro) {
             http_response_code(500);
             echo json_encode([
                 "success" => false,
@@ -54,23 +62,26 @@ class LivroController {
         echo json_encode([
             "success" => true,
             "mensagem" => "Livro criado com sucesso",
-            "livro" => [
-                "titulo"    => $dto->titulo,
-                "autor"     => $dto->autor,
-                "ano"       => $dto->ano,
-                "genero"    => $dto->genero,
-                "status"    => $dto->status,
-                "avaliacao" => $dto->avaliacao,
-                "anotacoes" => $dto->anotacoes
+            "detail" => [
+                "id:" => $idLivro,
             ]
         ]);
     }
 
     public function atualizarLivro(): void {
         $usuario = AuthMiddleware::autenticar();
-        $uuid = $usuario->data->id_usuario;
-        $idLivro = $_POST['id_livro'] ?? null;
+        $uuid = $usuario->data->UUID ?? null;
+        $data = json_decode(file_get_contents("php://input"), true) ?? [];
+        $idLivro = $data['id_livro'] ?? null;
 
+        if(!$uuid){
+            http_response_code(401);
+            echo json_encode([
+                "success" => false, 
+                "mensagem" => "UUID do usuário não encontrado"
+            ]);
+            return;
+        }
 
         if(!$idLivro){
             http_response_code(400);
@@ -92,7 +103,7 @@ class LivroController {
             return;
         }
 
-        $data = json_decode(file_get_contents("php://input"), true) ?? [];
+        
         
         try {
             $dto = new UpdateLivroDTO($data);
@@ -106,16 +117,16 @@ class LivroController {
         }
 
         $atualizado = $this->livroModel->atualizarLivro(
-            (int) $idLivro,
-            $dto->titulo,
-            $dto->autor,
-            $dto->ano,
-            (int) $idUsuario,
-            $dto->genero,
-            $dto->status,
-            $dto->avaliacao,
-            $dto->anotacoes
-        );
+        (int) $idLivro,
+        $dto->titulo ?? $livroAtual['titulo'],
+        $dto->autor ?? $livroAtual['autor'],
+        $dto->ano ?? $livroAtual['ano'],
+        $uuid,
+        $dto->genero ?? ($livroAtual['genero'] ?? null),
+        $dto->status ?? ($livroAtual['status'] ?? 'quero_ler'),
+        $dto->avaliacao ?? ($livroAtual['avaliacao'] ?? null),
+        $dto->anotacoes ?? ($livroAtual['anotacoes'] ?? null)
+);
 
         if(!$atualizado){
             http_response_code(500);
@@ -145,9 +156,9 @@ class LivroController {
 
     public function deletarLivro(): void {
         $usuario = AuthMiddleware::autenticar();
-        $idUsuario = $usuario->data->id_usuario;
+        $uuid = $usuario->data->UUID ?? null;
         
-        $idLivro = $_GET['id'] ?? null;
+        $idLivro = $_GET['id_livro'] ?? null;
 
         if(!$idLivro) {
             http_response_code(400);
@@ -155,7 +166,7 @@ class LivroController {
             return;
         }
 
-        $deletado = $this->livroModel->deletarLivro((int) $idLivro, $idUsuario);
+        $deletado = $this->livroModel->deletarLivro((int) $idLivro, $uuid);
 
         if(!$deletado){
             http_response_code(404);
