@@ -55,4 +55,5 @@ class Usuarios
         $stmt->bindValue(":id_usuario", $idUsuario, PDO::PARAM_INT);
         return $stmt->execute();
     }
+
 }

@@ -60,4 +60,6 @@ class UsuarioController
             "foto_perfil" => $urlFoto
         ]);
     }
+
+    
 }

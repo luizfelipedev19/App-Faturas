@@ -1,4 +1,6 @@
-<?php 
+<?php
+
+use PHPMailer\PHPMailer\SMTP;
 
 class Livro {
     private PDO $conn;
@@ -226,5 +228,20 @@ class Livro {
             'limit' => $limit,
             'total_pages' => (int) ceil($total / $limit)
         ];
+    }
+
+    public function encontrarLivro(int $idLivro, string $uuid): ?array {
+        $query = "Select id_livro, titulo, autor, ano, genero, status, avaliacao, anotacoes
+        FROM {$this->table}
+        WHERE id_livro = :idLivro
+        and usuario_id = (Select id_usuario from usuarios where UUID = :uuid)";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindValue(":idLivro", $idLivro, PDO::PARAM_INT);
+        $stmt->bindValue(":uuid", $uuid, PDO::PARAM_STR);
+        $stmt->execute();
+
+        $livro = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $livro ?: null;
     }
 }

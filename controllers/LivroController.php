@@ -141,7 +141,8 @@ class LivroController {
         echo json_encode([
             "success" => true,
             "mensagem" => "Livro atualizado com sucesso",
-            "livro" => [
+            "detail" => [
+                "livro" => [
                 "id"        => (int) $idLivro,
                 "titulo"    => $dto->titulo ?? $livroAtual['titulo'],
                 "autor"     => $dto->autor ?? $livroAtual['autor'],
@@ -151,6 +152,7 @@ class LivroController {
                 "avaliacao" => $dto->avaliacao ?? $livroAtual['avaliacao'],
                 "anotacoes" => $dto->anotacoes ?? $livroAtual['anotacoes']
             ]
+            ]
         ]);
     }
 
@@ -158,6 +160,7 @@ class LivroController {
         $usuario = AuthMiddleware::autenticar();
         $uuid = $usuario->data->UUID ?? null;
         
+        //pegar o id do livro pela url
         $idLivro = $_GET['id_livro'] ?? null;
 
         if(!$idLivro) {
@@ -174,10 +177,13 @@ class LivroController {
             return;
         }
 
-        http_response_code(200);
+        http_response_code(204);
         echo json_encode([
             "success" => true,
-            "mensagem" => "Livro deletado com sucesso"
+            "mensagem" => "Livro deletado com sucesso",
+            "detail:" => [
+
+            ]
         ]);
     }
 
@@ -215,7 +221,9 @@ class LivroController {
         http_response_code(200);
         echo json_encode([
             'success'   => true,
-            'filtros'   => ['titulo' => $titulo, 'autor' => $autor, 'ano' => $ano],
+            'detail' => [
+              "livros" => [ ['titulo' => $titulo, 'autor' => $autor, 'ano' => $ano],
+              ],
             'paginacao' => [
                 'page'        => $resultado['page'],
                 'limit'       => $resultado['limit'],
@@ -224,6 +232,54 @@ class LivroController {
             ],
             'ordenacao' => ['sort' => $sort, 'order' => $order],
             'livros'    => $resultado['items']
+            ]
         ]);
+    }
+
+    public function listarUmLivro(): void {
+        $usuario = AuthMiddleware::autenticar();
+        $uuid = $usuario->data->UUID ?? null;
+
+        // pegar o id do livro pela url
+        $idLivro = $_GET['id_livro'] ?? null;
+
+        if(!$uuid){
+            http_response_code(400);
+            echo json_encode([
+                "success" => false, 
+                "mensagem" => "UUID do usuário não encontrado"
+            ]);
+            return;
+        }
+
+        if(!$idLivro){
+            http_response_code(400);
+            echo json_encode([
+                "success" => false, 
+                "mensagem" => "Id do livro é obrigatório"
+            ]);
+            return; 
+        }
+
+        $livroEncontrado = $this->livroModel->encontrarLivro(
+            (int) $idLivro,
+            $uuid);
+        if(!$livroEncontrado){
+            http_response_code(404);
+            echo json_encode([
+                "success" => false,
+                "mensagem" => "Livro não encontrado"
+            ]);
+            return;
+        }
+
+        http_response_code(200);
+        echo json_encode([
+            "success" => true, 
+            "detail" => [
+                "livro" => $livroEncontrado
+            ]
+        ]);
+
     }
 }
