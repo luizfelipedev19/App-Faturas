@@ -36,13 +36,18 @@ class Usuarios
 
     public function criar(string $nome, string $email, string $senhaHash, string $uuid): bool
     {
-        $query = "insert into {$this->table} (nome, email, senha_hash, UUID) values (:nome, :email, :senha_hash, :uuid)";
+        $created_at = date('Y-m-d H:i:s');
+
+
+        $query = "insert into {$this->table} (nome, email, senha_hash, UUID, created_at) values (:nome, :email, :senha_hash, :uuid, :created_at)";
         $stmt = $this->conn->prepare($query);
 
         $stmt->bindValue(":nome", $nome);
         $stmt->bindValue(":email", $email);
         $stmt->bindValue(":senha_hash", $senhaHash);
         $stmt->bindValue(":uuid", $uuid);
+        $stmt->bindValue(":created_at", $created_at);
+
 
         return $stmt->execute();
     }
@@ -54,6 +59,38 @@ class Usuarios
         $stmt->bindValue(":foto_perfil", $caminhoFoto);
         $stmt->bindValue(":id_usuario", $idUsuario, PDO::PARAM_INT);
         return $stmt->execute();
+    }
+
+    public function editarUsuario(
+        int $id_usuario,
+        string $uuid,
+        string $nome,
+        string $email
+    ): bool {
+
+        $updated_at = date('Y-m-d H:i:s');
+
+        $query = "UPDATE {$this->table} SET
+        nome = :nome,
+        email = :email,
+        updated_at = :updated_at
+        WHERE id_usuario = :id_usuario
+        AND uuid = :uuid";
+
+
+        $stmt = $this->conn->prepare($query);
+
+        $stmt->bindValue(":id_usuario", $id_usuario, PDO::PARAM_INT);
+        $stmt->bindValue(":nome", $nome);
+        $stmt->bindValue(":email", $email);
+        $stmt->bindValue(":uuid", $uuid, PDO::PARAM_STR);
+        $stmt->bindValue(":updated_at", $updated_at);
+
+        $stmt->execute();
+
+        return $stmt->rowCount() > 0;
+
+
     }
 
 }

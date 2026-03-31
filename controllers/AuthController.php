@@ -45,7 +45,6 @@ class AuthController
             http_response_code(201);
             echo json_encode(["sucess" => true,
             "mensagem" => "Usuário criado com sucesso",
-            "uuid" => $uuid
             ]);
             return;
         }
@@ -58,6 +57,7 @@ class AuthController
         http_response_code(400);
         echo json_encode(["sucess" => false,
         "mensagem" => $e->getMessage()]);
+        
     }
 } 
 

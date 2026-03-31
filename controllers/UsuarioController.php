@@ -11,6 +11,7 @@ class UsuarioController
     {
         $this->usuarioModel = new Usuarios($db);
     }
+
     public function atualizarFoto(): void {
         $usuario = AuthMiddleware::autenticar();
         $idUsuario = $usuario->data->id_usuario;

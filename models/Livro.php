@@ -1,7 +1,6 @@
 <?php
 
 use PHPMailer\PHPMailer\SMTP;
-
 class Livro {
     private PDO $conn;
     private string $table = "livros";
@@ -19,11 +18,13 @@ class Livro {
     ?string $genero = null,
     string $status = 'quero_ler',
     ?int $avaliacao = null,
-    ?string $anotacoes = null
+    ?string $anotacoes = null,
 ): int|false {
 
+     $created_at = date('Y-m-d H:i:s');
+
     $query = "INSERT INTO {$this->table}
-        (titulo, autor, ano, usuario_id, genero, status, avaliacao, anotacoes)
+        (titulo, autor, ano, usuario_id, genero, status, avaliacao, anotacoes, created_at)
         VALUES (
             :titulo,
             :autor,
@@ -32,7 +33,8 @@ class Livro {
             :genero,
             :status,
             :avaliacao,
-            :anotacoes
+            :anotacoes,
+            :created_at
         )";
 
     $stmt = $this->conn->prepare($query);
@@ -51,6 +53,7 @@ class Livro {
     }
 
     $stmt->bindValue(":anotacoes", $anotacoes);
+    $stmt->bindValue(":created_at",  $created_at);
 
     $executado = $stmt->execute();
 
@@ -61,14 +64,14 @@ class Livro {
     return (int) $this->conn->lastInsertId();
 }
 
-    public function listarPorUsuario(int $idUsuario): array {
+    public function listarPorUsuario(string $uuid): array {
         $query = "SELECT id_livro, titulo, autor, ano
                   FROM {$this->table}
-                  WHERE usuario_id = :usuario_id
+                  WHERE usuario_id = (SELECT id_usuario from usuarios where UUID = : uuid)
                   ORDER BY id_livro DESC";
 
         $stmt = $this->conn->prepare($query);
-        $stmt->bindValue(":usuario_id", $idUsuario, PDO::PARAM_INT);
+        $stmt->bindValue(":uuid", $uuid, PDO::PARAM_STR);
         $stmt->execute();
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -105,6 +108,8 @@ class Livro {
         ?int $avaliacao = null,
         ?string $anotacoes = null
     ): bool {
+        $updated_at = date('Y-m-d H:i:s');
+
         $query = "UPDATE {$this->table} SET
             titulo = :titulo,
             autor = :autor,
@@ -112,7 +117,8 @@ class Livro {
             genero = :genero,
             status = :status,
             avaliacao = :avaliacao,
-            anotacoes = :anotacoes
+            anotacoes = :anotacoes,
+            updated_at = :updated_at
         WHERE id_livro = :idLivro
         AND usuario_id = (SELECT id_usuario FROM usuarios WHERE UUID = :uuid)";
 
@@ -124,7 +130,7 @@ class Livro {
         $stmt->bindValue(":genero", $genero);
         $stmt->bindValue(":status", $status);
 
-        // CORREÇÃO PRINCIPAL
+    
         if ($avaliacao === null) {
             $stmt->bindValue(":avaliacao", null, PDO::PARAM_NULL);
         } else {
@@ -134,6 +140,7 @@ class Livro {
         $stmt->bindValue(":anotacoes", $anotacoes);
         $stmt->bindValue(":idLivro", $idLivro, PDO::PARAM_INT);
         $stmt->bindValue(":uuid", $uuid, PDO::PARAM_STR);
+        $stmt->bindValue(":updated_at", $updated_at);
 
         $stmt->execute();
         return $stmt->rowCount() > 0;
