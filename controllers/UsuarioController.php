@@ -4,6 +4,7 @@ require_once __DIR__ . '/../middleware/AuthMiddleware.php';
 require_once __DIR__ . '/../utils/verificarEmail.php';
 require_once __DIR__ . '/../base/BaseController.php';
 
+use OpenApi\Attributes as OA;
 
 class UsuarioController extends BaseController
 {
@@ -16,57 +17,157 @@ class UsuarioController extends BaseController
         $this->usuarioModel = new Usuarios($db);
         $this->conn = $db;
     }
-    //método que atualiza a foto de perfil do usuário
-    public function atualizarFoto(): void {
-    $this->requireAuth();
 
-    $idUsuario = $this->user->data->id_usuario; // 🔥 corrigido
-
-    $urlFoto = $this->data["url_foto"] ?? null;
-
-    if(!$urlFoto){
-        $this->error("A URL da foto não pode ser vazia", 400);
-        return;
-    }
-
-    if(!filter_var($urlFoto, FILTER_VALIDATE_URL)){
-        $this->error("A URL da foto é inválida", 400);
-        return;
-    }
-
-    $atualizado = $this->usuarioModel->atualizarFoto($idUsuario, $urlFoto);
-
-    if(!$atualizado){
-        $this->error("Erro ao atualizar a foto de perfil", 500);
-        return;
-    }
-
-    $this->success([
-        "mensagem" => "Foto de perfil atualizada com sucesso",
-        "foto_perfil" => $urlFoto
-    ]);
-}
-
-    //função para editar os dados do usuário logado, como nome e email
-    function editarUsuarioLogado(): void {
+    #[OA\Put(
+        path: "/usuario/foto",
+        summary: "Atualiza a foto de perfil do usuário autenticado",
+        tags: ["Usuário"],
+        security: [["bearerAuth" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["url_foto"],
+                properties: [
+                    new OA\Property(
+                        property: "url_foto",
+                        type: "string",
+                        format: "uri",
+                        example: "https://meusite.com/imagens/foto.jpg"
+                    )
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "Foto de perfil atualizada com sucesso",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "mensagem", type: "string", example: "Foto de perfil atualizada com sucesso"),
+                        new OA\Property(property: "foto_perfil", type: "string", format: "uri", example: "https://meusite.com/imagens/foto.jpg")
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 400,
+                description: "URL ausente ou inválida",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "mensagem", type: "string", example: "A URL da foto é inválida")
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 401,
+                description: "Não autenticado"
+            ),
+            new OA\Response(
+                response: 500,
+                description: "Erro ao atualizar a foto de perfil",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "mensagem", type: "string", example: "Erro ao atualizar a foto de perfil")
+                    ]
+                )
+            )
+        ]
+    )]
+    public function atualizarFoto(): void
+    {
         $this->requireAuth();
 
-        //pegando o id do usuário que vem no usuário autenticado
         $idUsuario = $this->user->data->id_usuario;
-        
-        //pegando o UUID do usuário autenticado
+        $urlFoto = $this->data["url_foto"] ?? null;
+
+        if (!$urlFoto) {
+            $this->error("A URL da foto não pode ser vazia", 400);
+            return;
+        }
+
+        if (!filter_var($urlFoto, FILTER_VALIDATE_URL)) {
+            $this->error("A URL da foto é inválida", 400);
+            return;
+        }
+
+        $atualizado = $this->usuarioModel->atualizarFoto($idUsuario, $urlFoto);
+
+        if (!$atualizado) {
+            $this->error("Erro ao atualizar a foto de perfil", 500);
+            return;
+        }
+
+        $this->success([
+            "mensagem" => "Foto de perfil atualizada com sucesso",
+            "foto_perfil" => $urlFoto
+        ]);
+    }
+
+    #[OA\Put(
+        path: "/usuario",
+        summary: "Edita os dados do usuário autenticado",
+        tags: ["Usuário"],
+        security: [["bearerAuth" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: "nome", type: "string", example: "Luiz Felipe"),
+                    new OA\Property(property: "email", type: "string", format: "email", example: "luiz@email.com")
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "Usuário atualizado com sucesso",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "mensagem", type: "string", example: "Usuario atualizado com sucesso"),
+                        new OA\Property(
+                            property: "usuario",
+                            type: "object",
+                            properties: [
+                                new OA\Property(property: "id_usuario", type: "integer", example: 1)
+                            ]
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 401,
+                description: "Não autenticado"
+            ),
+            new OA\Response(
+                response: 409,
+                description: "E-mail já está em uso por outro usuário",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "mensagem", type: "string", example: "O email ja esta em uso por outro usuario")
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 500,
+                description: "Erro ao atualizar usuário",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "mensagem", type: "string", example: "Erro ao atualizar usuário")
+                    ]
+                )
+            )
+        ]
+    )]
+    public function editarUsuarioLogado(): void
+    {
+        $this->requireAuth();
+
+        $idUsuario = $this->user->data->id_usuario;
         $uuid = $this->user->data->UUID;
 
-        //pegando o que vem do body
-        $this->data;
-
-        //instanciando a classe verificarEmail
         $validar = new verificarEmail($this->conn);
 
-
-        //verificando se o e-mail existe e se já está em uso por outro usuário
-        if(isset($this->data['email'])){
-            if($validar->verificarEmailEmUso($this->data['email'], $this->uuid)){
+        if (isset($this->data['email'])) {
+            if ($validar->verificarEmailEmUso($this->data['email'], $this->uuid)) {
                 $this->error("O email ja esta em uso por outro usuario", 409);
                 return;
             }
@@ -74,66 +175,117 @@ class UsuarioController extends BaseController
 
         $atualizado = $this->usuarioModel->editarUsuario($idUsuario, $uuid, $this->data);
 
-        if(!$atualizado){
+        if (!$atualizado) {
             $this->error("Erro ao atualizar usuário", 500);
             return;
         }
 
-       $this->success([
-        "mensagem" => "Usuario atualizado com sucesso",
-        "usuario" => [
-            "id_usuario" => $idUsuario
+        $this->success([
+            "mensagem" => "Usuario atualizado com sucesso",
+            "usuario" => [
+                "id_usuario" => $idUsuario
+            ]
+        ]);
+    }
+
+    #[OA\Delete(
+        path: "/usuario",
+        summary: "Deleta o usuário autenticado",
+        tags: ["Usuário"],
+        security: [["bearerAuth" => []]],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "Usuário deletado com sucesso",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "mensagem", type: "string", example: "Usuário deletado com sucesso")
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 401,
+                description: "Não autenticado"
+            ),
+            new OA\Response(
+                response: 500,
+                description: "Erro ao deletar usuário",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "mensagem", type: "string", example: "Erro ao deletar usuário")
+                    ]
+                )
+            )
         ]
-       ]);
+    )]
+    public function deletarUsuario(): void
+    {
+        $this->requireAuth();
 
+        $idUsuario = $this->user->data->id_usuario;
+        $deletado = $this->usuarioModel->deletarUsuario($idUsuario);
+
+        if (!$deletado) {
+            $this->error("Erro ao deletar usuário", 500);
+            return;
+        }
+
+        $this->success([
+            "mensagem" => "Usuário deletado com sucesso"
+        ]);
     }
 
-    function deletarUsuario(): void {
+    #[OA\Get(
+        path: "/usuario",
+        summary: "Lista os dados do usuário autenticado",
+        tags: ["Usuário"],
+        security: [["bearerAuth" => []]],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "Usuário encontrado",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "mensagem", type: "string", example: "Usuário encontrado"),
+                        new OA\Property(
+                            property: "usuario",
+                            type: "object",
+                            additionalProperties: true
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 401,
+                description: "Não autenticado"
+            ),
+            new OA\Response(
+                response: 404,
+                description: "Usuário não encontrado",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "mensagem", type: "string", example: "Usuário não encontrado")
+                    ]
+                )
+            )
+        ]
+    )]
+    public function listarUsuario(): void
+    {
+        $this->requireAuth();
 
-    $this->requireAuth();
-    // Recupera o usuário autenticado através do token
+        $uuid = $this->user->data->UUID;
+        $dadosUsuario = $this->usuarioModel->listarUsuario($uuid);
 
-    // pegando o ID do usuário logado
-    $idUsuario = $this->user->data->id_usuario;
+        if (!$dadosUsuario) {
+            $this->error("Usuário não encontrado", 404);
+            return;
+        }
 
-    //excluindo o usuário do banco de dados
-    $deletado = $this->usuarioModel->deletarUsuario($idUsuario);
-
-    // Verifica se houve falha na exclusão
-    if (!$deletado) {
-        $this->error("Erro ao deletar usuário", 500);
-        return;
+        http_response_code(200);
+        $this->success([
+            "mensagem" => "Usuário encontrado",
+            "usuario" => $dadosUsuario
+        ]);
     }
-
-    // Retorna sucesso na operação
-   $this->success([
-    "mensagem" => "Usuário deletado com sucesso"
-   ]);
-}
-
-    function listarUsuario(): void {
-
-    $this->requireAuth();
-    // Recupera o usuário autenticado através do token
-
-    // pegando o UUID do usuário logado 
-    $uuid = $this->user->data->UUID;
-
-    // Busca os dados do usuário no banco
-    $dadosUsuario = $this->usuarioModel->listarUsuario($uuid);
-
-    // Verifica se o usuário foi encontrado
-    if (!$dadosUsuario) {
-        $this->error("Usuário não encontrado", 404);
-        return;
-    }
-
-    // Retorna os dados do usuário
-    http_response_code(200);
-    $this->success([
-       "mensagem" => "Usuário encontrado",
-       "usuario" => $dadosUsuario
-    ]);
-}
-
 }

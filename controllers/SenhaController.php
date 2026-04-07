@@ -7,13 +7,17 @@ require_once __DIR__ . '/../utils/enviarEmail.php';
 require_once __DIR__ . '/../models/Senha.php';
 require_once __DIR__ . '/../base/BaseController.php';
 
-class SenhaController extends BaseController{
+use OpenApi\Attributes as OA;
+
+class SenhaController extends BaseController
+{
     private Usuarios $usuarioModel;
     private Senha $senhaModel;
     private PDO $db;
     private enviarEmail $enviarEmail;
 
-    public function __construct(PDO $db){
+    public function __construct(PDO $db)
+    {
         parent::__construct();
         $this->usuarioModel = new Usuarios($db);
         $this->senhaModel = new Senha($db);
@@ -21,12 +25,65 @@ class SenhaController extends BaseController{
         $this->enviarEmail = new enviarEmail();
     }
 
-    public function solicitarRecuperacao(): void {
-
-
+    #[OA\Post(
+        path: "/recuperar-senha",
+        summary: "Solicita recuperação de senha",
+        tags: ["Senha"],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["email"],
+                properties: [
+                    new OA\Property(
+                        property: "email",
+                        type: "string",
+                        format: "email",
+                        example: "teste@email.com"
+                    )
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "Solicitação processada com sucesso",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "success", type: "boolean", example: true),
+                        new OA\Property(
+                            property: "mensagem",
+                            type: "string",
+                            example: "Se o e-mail estiver cadastrado, você receberá instruções para redefinir sua senha."
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 400,
+                description: "E-mail não informado",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "success", type: "boolean", example: false),
+                        new OA\Property(property: "mensagem", type: "string", example: "E-mail é obrigatório")
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 500,
+                description: "Erro ao gerar token ou enviar e-mail",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "mensagem", type: "string", example: "Erro ao enviar e-mail")
+                    ]
+                )
+            )
+        ]
+    )]
+    public function solicitarRecuperacao(): void
+    {
         $emailUsuario = trim($this->data['email'] ?? '');
 
-        if(!$emailUsuario){
+        if (!$emailUsuario) {
             http_response_code(400);
             echo json_encode([
                 "success" => false,
@@ -37,26 +94,26 @@ class SenhaController extends BaseController{
 
         $usuario = $this->usuarioModel->buscarPorEmail($emailUsuario);
 
-        if($usuario) { 
-        $token = $this->senhaModel->gerarTokenSenha($usuario['id_usuario']);
+        $enviado = true;
 
-        if(!$token){
-          $this->error("Erro ao gerar token", 500);
-          exit;
-        }
-        
-            //  Envia email com token 
+        if ($usuario) { 
+            $token = $this->senhaModel->gerarTokenSenha($usuario['id_usuario']);
+
+            if (!$token) {
+                $this->error("Erro ao gerar token", 500);
+                return;
+            }
+
             $enviado = $this->enviarEmailRecuperacao(
                 $emailUsuario,
                 $usuario['nome'],
                 $token
             );
-        
-}
-       
-        if(!$enviado){
+        }
+
+        if (!$enviado) {
             $this->error("Erro ao enviar e-mail", 500);
-            exit;
+            return;
         }
 
         http_response_code(200);
@@ -66,38 +123,76 @@ class SenhaController extends BaseController{
         ]);
     }
 
-    private function enviarEmailRecuperacao(string $email, string $nome, string $token): bool {
-        
-    $enviarEmailUsuario = new enviarEmail();
+    private function enviarEmailRecuperacao(string $email, string $nome, string $token): bool
+    {
+        $enviarEmailUsuario = new enviarEmail();
 
-    return $enviarEmailUsuario->$this->enviarEmail($email, $nome, $token);
+        return $enviarEmailUsuario->enviarEmail($email, $nome, $token);
     }
 
-    public function redefinirSenha(): void {
+    #[OA\Post(
+        path: "/redefinir-senha",
+        summary: "Redefine a senha do usuário",
+        tags: ["Senha"],
+        security: [["bearerAuth" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["token", "senha"],
+                properties: [
+                    new OA\Property(
+                        property: "token",
+                        type: "string",
+                        example: "a1b2c3d4e5f6g7h8"
+                    ),
+                    new OA\Property(
+                        property: "senha",
+                        type: "string",
+                        format: "password",
+                        example: "NovaSenha@123"
+                    )
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "Senha redefinida com sucesso",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "success", type: "boolean", example: true),
+                        new OA\Property(property: "mensagem", type: "string", example: "Senha redefinida com sucesso")
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 401,
+                description: "Não autenticado"
+            ),
+            new OA\Response(
+                response: 500,
+                description: "Não foi possível atualizar a senha",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "mensagem", type: "string", example: "Nao foi possível atualizar a senha")
+                    ]
+                )
+            )
+        ]
+    )]
+    public function redefinirSenha(): void
+    {
         $this->data;
-
+        $idUsuario = $this->user->data->id_usuario;
         $token = $this->data['token'] ?? '';
         $senhaNova = trim($this->data['senha'] ?? '');
 
-        if ($token === '') {
-            http_response_code(400);
-            echo json_encode([
-                "success" => false,
-                "mensagem" => "Token é obrigatório"
-            ]);
+        $novaSenha = $this->senhaModel->gerarSenhaHash($senhaNova, $idUsuario, $token);
+
+        if (!$novaSenha) {
+            $this->error("Nao foi possível atualizar a senha", 500);
             return;
         }
-
-        if (mb_strlen($senhaNova) < 8) {
-            http_response_code(400);
-            echo json_encode([
-                "success" => false,
-                "mensagem" => "A senha deve ter pelo menos 8 caracteres"
-            ]);
-            return;
-        }       
-
-        
 
         http_response_code(200);
         echo json_encode([

@@ -6,22 +6,82 @@ require_once __DIR__ . '/../DTO/UpdateLivroDTO.php';
 require_once __DIR__ . '/../middleware/AuthMiddleware.php';
 require_once __DIR__ . '/../base/BaseController.php';
 
-class LivroController extends BaseController{ 
+use OpenApi\Attributes as OA;
 
+class LivroController extends BaseController
+{
     private Livro $livroModel;
 
-     public function __construct(PDO $db){
+    public function __construct(PDO $db)
+    {
         parent::__construct();
         $this->livroModel = new Livro($db);
     }
 
-    public function criarLivro(): void {
-    $this->requireAuth();
+    #[OA\Post(
+        path: "/livros",
+        summary: "Cria um novo livro para o usuário autenticado",
+        tags: ["Livros"],
+        security: [["bearerAuth" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["titulo", "autor", "ano", "status"],
+                properties: [
+                    new OA\Property(property: "titulo", type: "string", example: "Dom Casmurro"),
+                    new OA\Property(property: "autor", type: "string", example: "Machado de Assis"),
+                    new OA\Property(property: "ano", type: "integer", example: 1899),
+                    new OA\Property(property: "genero", type: "string", nullable: true, example: "Romance"),
+                    new OA\Property(property: "status", type: "string", example: "quero_ler"),
+                    new OA\Property(property: "avaliacao", type: "integer", nullable: true, example: 5),
+                    new OA\Property(property: "anotacoes", type: "string", nullable: true, example: "Clássico da literatura brasileira")
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: "Livro criado com sucesso",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "mensagem", type: "string", example: "Livro criado com sucesso"),
+                        new OA\Property(property: "id", type: "integer", example: 10)
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 400,
+                description: "Dados inválidos",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "mensagem", type: "string", example: "Campo título é obrigatório")
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 401,
+                description: "Não autenticado"
+            ),
+            new OA\Response(
+                response: 500,
+                description: "Erro ao criar livro",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "mensagem", type: "string", example: "Erro ao criar livro")
+                    ]
+                )
+            )
+        ]
+    )]
+    public function criarLivro(): void
+    {
+        $this->requireAuth();
 
         try {
             $dto = new CreateLivroDTO($this->data);
         } catch (Exception $e) {
-           $this->error($e->getMessage(), 400);
+            $this->error($e->getMessage(), 400);
+            return;
         }
 
         $idLivro = $this->livroModel->criarLivro(
@@ -37,50 +97,136 @@ class LivroController extends BaseController{
 
         if (!$idLivro) {
             $this->error("Erro ao criar livro", 500);
+            return;
         }
 
         $this->success([
             "mensagem" => "Livro criado com sucesso",
             "id" => $idLivro
         ], 201);
-
     }
 
-    public function atualizarLivro(): void {
+    #[OA\Put(
+        path: "/livros",
+        summary: "Atualiza um livro existente do usuário autenticado",
+        tags: ["Livros"],
+        security: [["bearerAuth" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["id_livro"],
+                properties: [
+                    new OA\Property(property: "id_livro", type: "integer", example: 10),
+                    new OA\Property(property: "titulo", type: "string", nullable: true, example: "Dom Casmurro - edição revisada"),
+                    new OA\Property(property: "autor", type: "string", nullable: true, example: "Machado de Assis"),
+                    new OA\Property(property: "ano", type: "integer", nullable: true, example: 1900),
+                    new OA\Property(property: "genero", type: "string", nullable: true, example: "Romance"),
+                    new OA\Property(property: "status", type: "string", nullable: true, example: "lendo"),
+                    new OA\Property(property: "avaliacao", type: "integer", nullable: true, example: 4),
+                    new OA\Property(property: "anotacoes", type: "string", nullable: true, example: "Leitura em andamento")
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "Livro atualizado com sucesso",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "mensagem", type: "string", example: "Livro atualizado com sucesso"),
+                        new OA\Property(
+                            property: "detail",
+                            type: "object",
+                            properties: [
+                                new OA\Property(
+                                    property: "livro",
+                                    type: "object",
+                                    properties: [
+                                        new OA\Property(property: "id", type: "integer", example: 10),
+                                        new OA\Property(property: "titulo", type: "string", example: "Dom Casmurro - edição revisada"),
+                                        new OA\Property(property: "autor", type: "string", example: "Machado de Assis"),
+                                        new OA\Property(property: "ano", type: "integer", example: 1900),
+                                        new OA\Property(property: "genero", type: "string", nullable: true, example: "Romance"),
+                                        new OA\Property(property: "status", type: "string", example: "lendo"),
+                                        new OA\Property(property: "avaliacao", type: "integer", nullable: true, example: 4),
+                                        new OA\Property(property: "anotacoes", type: "string", nullable: true, example: "Leitura em andamento")
+                                    ]
+                                )
+                            ]
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 400,
+                description: "Id do livro ausente ou dados inválidos",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "mensagem", type: "string", example: "Id do livro é obrigatório")
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 401,
+                description: "Não autenticado"
+            ),
+            new OA\Response(
+                response: 404,
+                description: "Livro não encontrado",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "mensagem", type: "string", example: "Livro não encontrado")
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 500,
+                description: "Erro ao atualizar livro",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "mensagem", type: "string", example: "Erro ao atualizar livro")
+                    ]
+                )
+            )
+        ]
+    )]
+    public function atualizarLivro(): void
+    {
         $this->requireAuth();
         $idLivro = $this->data['id_livro'] ?? null;
 
-        if(!$idLivro){
+        if (!$idLivro) {
             $this->error("Id do livro é obrigatório", 400);
             return;
         }
 
         $livroAtual = $this->livroModel->buscarPorId((int) $idLivro, $this->uuid);
 
-        if(!$livroAtual){
+        if (!$livroAtual) {
             $this->error("Livro não encontrado", 404);
             return;
         }
+
         try {
             $dto = new UpdateLivroDTO($this->data);
-        } catch (Exception $e){
+        } catch (Exception $e) {
             $this->error($e->getMessage());
             return;
         }
 
         $atualizado = $this->livroModel->atualizarLivro(
-        (int) $idLivro,
-        $dto->titulo ?? $livroAtual['titulo'],
-        $dto->autor ?? $livroAtual['autor'],
-        $dto->ano ?? ((int) ($livroAtual['ano'] ?? 0)),
-        $this->uuid,
-        $dto->genero ?? ($livroAtual['genero'] ?? null),
-        $dto->status ?? ($livroAtual['status'] ?? 'quero_ler'),
-        $dto->avaliacao ?? ($livroAtual['avaliacao'] ?? null),
-        $dto->anotacoes ?? ($livroAtual['anotacoes'] ?? null)
-);
+            (int) $idLivro,
+            $dto->titulo ?? $livroAtual['titulo'],
+            $dto->autor ?? $livroAtual['autor'],
+            $dto->ano ?? ((int) ($livroAtual['ano'] ?? 0)),
+            $this->uuid,
+            $dto->genero ?? ($livroAtual['genero'] ?? null),
+            $dto->status ?? ($livroAtual['status'] ?? 'quero_ler'),
+            $dto->avaliacao ?? ($livroAtual['avaliacao'] ?? null),
+            $dto->anotacoes ?? ($livroAtual['anotacoes'] ?? null)
+        );
 
-        if(!$atualizado){
+        if (!$atualizado) {
             $this->error("Erro ao atualizar livro", 500);
             return;
         }
@@ -89,100 +235,161 @@ class LivroController extends BaseController{
             "mensagem" => "Livro atualizado com sucesso",
             "detail" => [
                 "livro" => [
-                "id"        => (int) $idLivro,
-                "titulo"    => $dto->titulo ?? $livroAtual['titulo'],
-                "autor"     => $dto->autor ?? $livroAtual['autor'],
-                "ano"       => $dto->ano ?? $livroAtual['ano'],
-                "genero"    => $dto->genero ?? $livroAtual['genero'],
-                "status"    => $dto->status ?? $livroAtual['status'],
-                "avaliacao" => $dto->avaliacao ?? $livroAtual['avaliacao'],
-                "anotacoes" => $dto->anotacoes ?? $livroAtual['anotacoes']
-            ]
+                    "id"        => (int) $idLivro,
+                    "titulo"    => $dto->titulo ?? $livroAtual['titulo'],
+                    "autor"     => $dto->autor ?? $livroAtual['autor'],
+                    "ano"       => $dto->ano ?? $livroAtual['ano'],
+                    "genero"    => $dto->genero ?? $livroAtual['genero'],
+                    "status"    => $dto->status ?? $livroAtual['status'],
+                    "avaliacao" => $dto->avaliacao ?? $livroAtual['avaliacao'],
+                    "anotacoes" => $dto->anotacoes ?? $livroAtual['anotacoes']
+                ]
             ]
         ]);
     }
 
-    public function deletarLivro(): void {
+    #[OA\Delete(
+        path: "/livros",
+        summary: "Deleta um livro do usuário autenticado",
+        tags: ["Livros"],
+        security: [["bearerAuth" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["id_livro"],
+                properties: [
+                    new OA\Property(property: "id_livro", type: "integer", example: 10)
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 204,
+                description: "Livro deletado com sucesso"
+            ),
+            new OA\Response(
+                response: 400,
+                description: "Id do livro não informado",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "mensagem", type: "string", example: "Id do livro é obrigatório")
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 401,
+                description: "Não autenticado"
+            ),
+            new OA\Response(
+                response: 404,
+                description: "Livro não encontrado",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "mensagem", type: "string", example: "Livro não encontrado")
+                    ]
+                )
+            )
+        ]
+    )]
+    public function deletarLivro(): void
+    {
         $this->requireAuth();
-        //pegar o id do livro pelo body
-        $this->data;
         $idLivro = $this->data['id_livro'] ?? null;
 
-        if(!$idLivro) {
+        if (!$idLivro) {
             $this->error("Id do livro é obrigatório", 400);
+            return;
         }
 
         $deletado = $this->livroModel->deletarLivro((int) $idLivro, $this->uuid);
 
-        if(!$deletado){
+        if (!$deletado) {
             $this->error("Livro não encontrado", 404);
+            return;
         }
 
         http_response_code(204);
     }
-/*
-    public function listarLivros(): void {
-        $usuario = AuthMiddleware::autenticar();
-        $uuid = $usuario->data->UUID ?? null;
 
-        $titulo = trim($_GET['titulo'] ?? '');
-        $autor  = trim($_GET['autor'] ?? '');
-        $ano    = isset($_GET['ano']) && $_GET['ano'] !== '' ? (int) $_GET['ano'] : null;
-        $genero = trim($_GET['genero'] ?? '');
-        $status = trim($_GET['status'] ?? '');
-        $avaliacao = isset($_GET['avaliacao']) && $_GET['avaliacao'] !== '' ? (int) $_GET['avaliacao'] : null;
-        $anotacoes = trim($_GET['anotacoes'] ?? '');
-
-        $page   = isset($_GET['page']) ? (int) $_GET['page'] : 1;
-        $limit  = isset($_GET['limit']) ? (int) $_GET['limit'] : 10;
-        $sort   = $_GET['sort'] ?? 'id_livro';
-        $order  = strtolower($_GET['order'] ?? 'asc');
-
-        if ($page < 1) $page = 1;
-        if ($limit < 1) $limit = 10;
-        if ($limit > 100) $limit = 100;
-
-        $allowedSort = ['id_livro', 'titulo', 'autor', 'ano', 'genero', 'status', 'avaliacao', 'anotacoes'];
-
-        // Valida os parâmetros de ordenação garantindo valores permitidos e evitando entradas inválidas ou inseguras
-        if (!in_array($sort, $allowedSort, true)) $sort = 'id_livro';
-        if (!in_array($order, ['asc', 'desc'], true)) $order = 'asc';
-
-        $resultado = $this->livroModel->listarComFiltros(
-            $uuid,
-            $titulo,
-            $autor,
-            $ano,
-            $genero,
-            $status,
-            $avaliacao,
-            $anotacoes,
-            $page,
-            $limit,
-            $sort,
-            $order
-        );
-
-        http_response_code(200);
-        echo json_encode([
-            'success'   => true,
-            'detail' => [
-              "livros" => [ ['titulo' => $titulo, 'autor' => $autor, 'ano' => $ano,
-              'genero' => $genero, 'status' => $status, 'avaliacao' => $avaliacao, 'anotacoes' => $anotacoes],
-              ],
-            'paginacao' => [
-                'page'        => $resultado['page'],
-                'limit'       => $resultado['limit'],
-                'total'       => $resultado['total'],
-                'total_pages' => $resultado['total_pages']
-            ],
-            'ordenacao' => ['sort' => $sort, 'order' => $order],
-            'livros'    => $resultado['items']
-            ]
-        ]);
-    }
-*/
-    public function listarLivros(): void {
+    #[OA\Get(
+        path: "/livros/listar",
+        summary: "Lista livros do usuário autenticado",
+        tags: ["Livros"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(
+                name: "page",
+                in: "query",
+                required: false,
+                description: "Página atual",
+                schema: new OA\Schema(type: "integer", default: 1, example: 1)
+            ),
+            new OA\Parameter(
+                name: "limit",
+                in: "query",
+                required: false,
+                description: "Quantidade de itens por página",
+                schema: new OA\Schema(type: "integer", default: 10, example: 10)
+            )
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "Livros retornados com sucesso",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: "detail",
+                            type: "object",
+                            properties: [
+                                new OA\Property(
+                                    property: "livros",
+                                    type: "array",
+                                    items: new OA\Items(
+                                        properties: [
+                                            new OA\Property(property: "titulo", type: "string", example: "Dom Casmurro"),
+                                            new OA\Property(property: "autor", type: "string", example: "Machado de Assis"),
+                                            new OA\Property(property: "ano", type: "integer", nullable: true, example: 1899),
+                                            new OA\Property(property: "genero", type: "string", example: "Romance"),
+                                            new OA\Property(property: "status", type: "string", example: "lendo"),
+                                            new OA\Property(property: "avaliacao", type: "integer", nullable: true, example: 5),
+                                            new OA\Property(property: "anotacoes", type: "string", nullable: true, example: "Muito bom")
+                                        ],
+                                        type: "object"
+                                    )
+                                ),
+                                new OA\Property(
+                                    property: "paginacao",
+                                    type: "object",
+                                    properties: [
+                                        new OA\Property(property: "page", type: "integer", example: 1),
+                                        new OA\Property(property: "limit", type: "integer", example: 10),
+                                        new OA\Property(property: "total", type: "integer", example: 1),
+                                        new OA\Property(property: "total_pages", type: "integer", example: 1)
+                                    ]
+                                )
+                            ]
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 401,
+                description: "Não autenticado"
+            ),
+            new OA\Response(
+                response: 404,
+                description: "Nenhum livro encontrado",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "mensagem", type: "string", example: "Nenhum livro encontrado")
+                    ]
+                )
+            )
+        ]
+    )]
+    public function listarLivros(): void
+    {
         $this->requireAuth();
 
         $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
@@ -195,8 +402,7 @@ class LivroController extends BaseController{
         $livroEncontrado = $this->livroModel->encontrarLivro($this->data, $this->uuid);
         $livroCount = count($livroEncontrado);
 
-
-        if($livroCount === 0){
+        if ($livroCount === 0) {
             $this->error("Nenhum livro encontrado", 404);
             return;
         }
@@ -204,8 +410,15 @@ class LivroController extends BaseController{
         $this->success([
             "detail" => [
                 "livros" => [
-                    ['titulo' => $livroEncontrado['titulo'] ?? '', 'autor' => $livroEncontrado['autor'] ?? '', 'ano' => $livroEncontrado['ano'] ?? null,
-                    'genero' => $livroEncontrado['genero'] ?? '', 'status' => $livroEncontrado['status'] ?? '', 'avaliacao' => $livroEncontrado['avaliacao'] ?? null, 'anotacoes' => $livroEncontrado['anotacoes'] ?? ''],
+                    [
+                        'titulo' => $livroEncontrado['titulo'] ?? '',
+                        'autor' => $livroEncontrado['autor'] ?? '',
+                        'ano' => $livroEncontrado['ano'] ?? null,
+                        'genero' => $livroEncontrado['genero'] ?? '',
+                        'status' => $livroEncontrado['status'] ?? '',
+                        'avaliacao' => $livroEncontrado['avaliacao'] ?? null,
+                        'anotacoes' => $livroEncontrado['anotacoes'] ?? '',
+                    ],
                 ],
                 'paginacao' => [
                     'page'        => $page,
