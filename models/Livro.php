@@ -258,7 +258,7 @@ class Livro {
         ];
     }
 
-    public function encontrarLivro($data, string $uuid): ?array {
+    public function encontrarLivro($data, string $uuid): array {
         $where = "WHERE usuario_id = (Select id_usuario from usuarios where UUID = :uuid)";
         $params = [':uuid' => $uuid];
 
@@ -324,8 +324,7 @@ class Livro {
 
         $query = "SELECT id_livro, titulo, autor, ano, genero, status, avaliacao, anotacoes
                   FROM {$this->table}
-                  {$where}
-                  LIMIT 1";
+                  {$where}";
 
         $stmt = $this->conn->prepare($query);
 
@@ -349,7 +348,7 @@ class Livro {
             $stmt->bindValue($key, $val, PDO::PARAM_STR);
         }
         $livro = $stmt->execute();
-        $livro = $stmt->fetch(PDO::FETCH_ASSOC);
+        $livro = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $livro = $livro ?: [];
         return $livro;
     }

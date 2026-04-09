@@ -389,44 +389,32 @@ class LivroController extends BaseController
         ]
     )]
     public function listarLivros(): void
-    {
-        $this->requireAuth();
+{
+    $this->requireAuth();
 
-        $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
-        $limit = isset($_GET['limit']) ? (int) $_GET['limit'] : 10;
+    $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+    $limit = isset($_GET['limit']) ? (int) $_GET['limit'] : 10;
 
-        if ($page < 1) $page = 1;
-        if ($limit < 1) $limit = 10;
-        if ($limit > 100) $limit = 100;
+    if ($page < 1) $page = 1;
+    if ($limit < 1) $limit = 10;
+    if ($limit > 100) $limit = 100;
 
-        $livroEncontrado = $this->livroModel->encontrarLivro($this->data, $this->uuid);
-        $livroCount = count($livroEncontrado);
+    $livrosEncontrados = $this->livroModel->encontrarLivro($this->data, $this->uuid);
+    $livroCount = count($livrosEncontrados);
 
-        if ($livroCount === 0) {
-            $this->error("Nenhum livro encontrado", 404);
-            return;
-        }
-
-        $this->success([
-            "detail" => [
-                "livros" => [
-                    [
-                        'titulo' => $livroEncontrado['titulo'] ?? '',
-                        'autor' => $livroEncontrado['autor'] ?? '',
-                        'ano' => $livroEncontrado['ano'] ?? null,
-                        'genero' => $livroEncontrado['genero'] ?? '',
-                        'status' => $livroEncontrado['status'] ?? '',
-                        'avaliacao' => $livroEncontrado['avaliacao'] ?? null,
-                        'anotacoes' => $livroEncontrado['anotacoes'] ?? '',
-                    ],
-                ],
-                'paginacao' => [
-                    'page'        => $page,
-                    'limit'       => $limit,
-                    'total'       => $livroCount,
-                    'total_pages' => ceil($livroCount / $limit)
-                ],
-            ]
-        ]);
+    if ($livroCount === 0) {
+        $this->error("Nenhum livro encontrado", 404);
+        return;
     }
+
+    $this->success([
+        "livros" => $livrosEncontrados,
+        "paginacao" => [
+            "page" => $page,
+            "limit" => $limit,
+            "total" => $livroCount,
+            "total_pages" => (int) ceil($livroCount / $limit)
+        ]
+    ]);
+}
 }
