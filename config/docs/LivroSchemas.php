@@ -60,34 +60,16 @@ class LivroUpdateRequestSchema {}
 )]
 class LivroDeleteRequestSchema {}
 
-#[OA\Schema(
-    schema: "LivroCreateResponse",
-    type: "object",
+#[OA\Schema (
+    schema: "LivroListRequest",
+    required: ["page", "limit"],
     properties: [
-        new OA\Property(property: "mensagem", type: "string", example: "Livro criado com sucesso"),
-        new OA\Property(property: "id", type: "integer", example: 10)
-    ]
+        new OA\Property(property: "page", type: "integer", example: 1),
+        new OA\Property(property: "limit", type: "integer", example: 5),
+    ],
+    type: "object"
 )]
-class LivroCreateResponseSchema {}
-
-#[OA\Schema(
-    schema: "LivroUpdateResponse",
-    type: "object",
-    properties: [
-        new OA\Property(property: "mensagem", type: "string", example: "Livro atualizado com sucesso"),
-        new OA\Property(
-            property: "detail",
-            type: "object",
-            properties: [
-                new OA\Property(
-                    property: "livro",
-                    ref: "#/components/schemas/LivroResource"
-                )
-            ]
-        )
-    ]
-)]
-class LivroUpdateResponseSchema {}
+class LivroListRequestSchema {}
 
 #[OA\Schema(
     schema: "LivroListResponse",
@@ -117,3 +99,34 @@ class LivroUpdateResponseSchema {}
     ]
 )]
 class LivroListResponseSchema {}
+
+
+#[OA\Schema(
+    schema: "LivroCreateResponse",
+    type: "object",
+    properties: [
+        new OA\Property(property: "mensagem", type: "string", example: "Livro criado com sucesso"),
+        new OA\Property(property: "id", type: "integer", example: 10)
+    ]
+)]
+class LivroCreateResponseSchema {}
+
+#[OA\Schema(
+    schema: "LivroUpdateResponse",
+    type: "object",
+    properties: [
+        new OA\Property(property: "mensagem", type: "string", example: "Livro atualizado com sucesso"),
+        new OA\Property(
+            property: "detail",
+            type: "object",
+            properties: [
+                new OA\Property(
+                    property: "livro",
+                    ref: "#/components/schemas/LivroResource"
+                )
+            ]
+        )
+    ]
+)]
+class LivroUpdateResponseSchema {}
+

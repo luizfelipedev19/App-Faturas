@@ -22,7 +22,7 @@ class LivroController extends BaseController
         path: "/livros",
         summary: "Cria um novo livro para o usuário autenticado",
         tags: ["Livros"],
-        security: [["bearerAuth" => []]],
+        security: [["bearerAuth" => [], "userUuid" => []]],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(ref: "#/components/schemas/LivroCreateRequest")
@@ -83,10 +83,10 @@ class LivroController extends BaseController
     }
 
     #[OA\Put(
-        path: "/livros",
+        path: "/livro/editar",
         summary: "Atualiza um livro existente do usuário autenticado",
         tags: ["Livros"],
-        security: [["bearerAuth" => []]],
+        security: [["bearerAuth" => [], "userUuid" => []]],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(ref: "#/components/schemas/LivroUpdateRequest")
@@ -178,10 +178,10 @@ class LivroController extends BaseController
     }
 
     #[OA\Delete(
-        path: "/livros",
+        path: "/livro/deletar",
         summary: "Deleta um livro do usuário autenticado",
         tags: ["Livros"],
-        security: [["bearerAuth" => []]],
+        security: [["bearerAuth" => [], "userUuid" => []]],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(ref: "#/components/schemas/LivroDeleteRequest")
@@ -232,7 +232,7 @@ class LivroController extends BaseController
         path: "/livros",
         summary: "Lista livros do usuário autenticado",
         tags: ["Livros"],
-        security: [["bearerAuth" => []]],
+        security: [["bearerAuth" => [], "userUuid" => []]],
         parameters: [
             new OA\Parameter(
                 name: "page",
@@ -266,6 +266,7 @@ class LivroController extends BaseController
             )
         ]
     )]
+
     public function listarLivros(): void
     {
         $this->requireAuth();
@@ -273,15 +274,15 @@ class LivroController extends BaseController
         $pageDefault = 1;
         $limitDefault = 10;
         $_GET = $this->data;
-        $page = isset($_GET['page']) ? (int) $_GET['page'] : $pageDefault;
-        $limit = isset($_GET['limit']) ? (int) $_GET['limit'] : $limitDefault;
+        $page = $_GET['page'] ?? $this->data['page'] ?? $pageDefault;
+        $limit = $_GET['limit'] ?? $this->data['limit'] ?? $limitDefault;
 
         if ($page < 1) $page = $pageDefault;
         if ($limit < 1) $limit = $limitDefault;
         if ($limit > 100) $limit = 100;
 
         $resultado = $this->livroModel->encontrarLivro(
-            $this->data,
+            !empty($_GET) ? $_GET : $this->data,
             $this->uuid,
             $page,
             $limit

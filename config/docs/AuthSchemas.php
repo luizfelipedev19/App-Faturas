@@ -67,18 +67,6 @@ class LoginRequestSchema {}
 */
 
 #[OA\Schema(
-    schema: "UsuarioPerfilResource",
-    type: "object",
-    properties: [
-        new OA\Property(property: "id_usuario", type: "integer", example: 1),
-        new OA\Property(property: "UUID", type: "string", example: "e04230085f34fcdc518137ac826725"),
-        new OA\Property(property: "nome", type: "string", example: "Luiz Felipe"),
-        new OA\Property(property: "email", type: "string", format: "email", example: "teste@email.com")
-    ]
-)]
-class UsuarioPerfilResourceSchema {}
-
-#[OA\Schema(
     schema: "LoginDetailResource",
     type: "object",
     properties: [
@@ -128,24 +116,3 @@ class RegisterResponseSchema {}
     ]
 )]
 class LoginResponseSchema {}
-
-#[OA\Schema(
-    schema: "PerfilResponse",
-    type: "object",
-    properties: [
-        new OA\Property(property: "success", type: "boolean", example: true),
-        new OA\Property(
-            property: "detail",
-            type: "object",
-            properties: [
-                new OA\Property(property: "mensagem", type: "string", example: "Perfil acessado com sucesso"),
-                new OA\Property(property: "id_usuario", type: "integer", example: 1),
-                new OA\Property(
-                    property: "usuario",
-                    ref: "#/components/schemas/UsuarioPerfilResource"
-                )
-            ]
-        )
-    ]
-)]
-class PerfilResponseSchema {}

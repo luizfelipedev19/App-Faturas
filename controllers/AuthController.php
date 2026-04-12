@@ -141,43 +141,6 @@ class AuthController extends BaseController
         }
     }
 
-    #[OA\Get(
-        path: "/perfil",
-        summary: "Retorna os dados do perfil do usuário autenticado",
-        tags: ["Auth"],
-        security: [["bearerAuth" => []]],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Perfil acessado com sucesso",
-                content: new OA\JsonContent(ref: "#/components/schemas/PerfilResponse")
-            ),
-            new OA\Response(
-                response: 401,
-                description: "Token ausente, inválido ou sem permissão",
-                content: new OA\JsonContent(ref: "#/components/schemas/ErrorResponse")
-            )
-        ]
-    )]
-    public function perfil()
-    {
-        $this->requireAuth();
-
-        $usuario = AuthMiddleware::autenticar();
-
-        if (($usuario->type ?? null) !== "access") {
-            $this->error("Token inválido para acesso", 401);
-            return;
-        }
-
-        $this->success([
-            "success" => true,
-            "mensagem" => "Perfil acessado com sucesso",
-            "id_usuario" => $usuario->data->id_usuario,
-            "usuario" => $usuario->data
-        ]);
-    }
-
     private function gerarUUIDUsuario(int $tamanho = 30): string
     {
         return substr(bin2hex(random_bytes(20)), 0, $tamanho);

@@ -23,7 +23,7 @@ class UsuarioController extends BaseController
         path: "/usuario/foto",
         summary: "Atualiza a foto de perfil do usuário autenticado",
         tags: ["Usuário"],
-        security: [["bearerAuth" => []]],
+        security: [["bearerAuth" => [], "userUuid" => []]],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(ref: "#/components/schemas/UsuarioFotoRequest")
@@ -78,10 +78,10 @@ class UsuarioController extends BaseController
     }
 
     #[OA\Put(
-        path: "/usuario",
+        path: "/usuario/editar",
         summary: "Edita os dados do usuário autenticado",
         tags: ["Usuário"],
-        security: [["bearerAuth" => []]],
+        security: [["bearerAuth" => [], "userUuid" => []]],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(ref: "#/components/schemas/UsuarioUpdateRequest")
@@ -137,10 +137,10 @@ class UsuarioController extends BaseController
     }
 
     #[OA\Delete(
-        path: "/usuario",
+        path: "/usuario/deletar",
         summary: "Deleta o usuário autenticado",
         tags: ["Usuário"],
-        security: [["bearerAuth" => []]],
+        security: [["bearerAuth" => [], "userUuid" => []]],
         responses: [
             new OA\Response(
                 response: 200,
@@ -176,7 +176,7 @@ class UsuarioController extends BaseController
         path: "/usuario",
         summary: "Lista os dados do usuário autenticado",
         tags: ["Usuário"],
-        security: [["bearerAuth" => []]],
+        security: [["bearerAuth" => [], "userUuid" => []]],
         responses: [
             new OA\Response(
                 response: 200,

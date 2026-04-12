@@ -70,28 +70,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /perfil:
-    get:
-      tags:
-        - Auth
-      summary: 'Retorna os dados do perfil do usuário autenticado'
-      operationId: 11b2b4bdfe5b35bed6f42bed010cae98
-      responses:
-        '200':
-          description: 'Perfil acessado com sucesso'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PerfilResponse'
-        '401':
-          description: 'Token ausente, inválido ou sem permissão'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-      security:
-        -
-          bearerAuth: []
   /livros:
     get:
       tags:
@@ -135,11 +113,49 @@ paths:
       security:
         -
           bearerAuth: []
+          userUuid: []
+    post:
+      tags:
+        - Livros
+      summary: 'Cria um novo livro para o usuário autenticado'
+      operationId: b739368170d28460413bda43250d382b
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LivroCreateRequest'
+      responses:
+        '201':
+          description: 'Livro criado com sucesso'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LivroCreateResponse'
+        '400':
+          description: 'Dados inválidos'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 'Não autenticado'
+        '500':
+          description: 'Erro ao criar livro'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        -
+          bearerAuth: []
+          userUuid: []
+  /livro/editar:
     put:
       tags:
         - Livros
       summary: 'Atualiza um livro existente do usuário autenticado'
-      operationId: ee928fab664b23084de1dbe7464ea81e
+      operationId: ef2a4c7b5838f9683848a5cb260d5072
       requestBody:
         required: true
         content:
@@ -176,46 +192,13 @@ paths:
       security:
         -
           bearerAuth: []
-    post:
-      tags:
-        - Livros
-      summary: 'Cria um novo livro para o usuário autenticado'
-      operationId: b739368170d28460413bda43250d382b
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LivroCreateRequest'
-      responses:
-        '201':
-          description: 'Livro criado com sucesso'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LivroCreateResponse'
-        '400':
-          description: 'Dados inválidos'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: 'Não autenticado'
-        '500':
-          description: 'Erro ao criar livro'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-      security:
-        -
-          bearerAuth: []
+          userUuid: []
+  /livro/deletar:
     delete:
       tags:
         - Livros
       summary: 'Deleta um livro do usuário autenticado'
-      operationId: d4487ace35a2539f559bc45a6a2a4568
+      operationId: 667fd149a974d2e4cc69b61f1e1ccee0
       requestBody:
         required: true
         content:
@@ -242,6 +225,7 @@ paths:
       security:
         -
           bearerAuth: []
+          userUuid: []
   /recuperar-senha:
     post:
       tags:
@@ -370,35 +354,13 @@ paths:
       security:
         -
           bearerAuth: []
-  /usuario:
-    get:
-      tags:
-        - Usuário
-      summary: 'Lista os dados do usuário autenticado'
-      operationId: 1ee74c0a21f0b1d380b76ab89163a811
-      responses:
-        '200':
-          description: 'Usuário encontrado'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UsuarioListResponse'
-        '401':
-          description: 'Não autenticado'
-        '404':
-          description: 'Usuário não encontrado'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-      security:
-        -
-          bearerAuth: []
+          userUuid: []
+  /usuario/editar:
     put:
       tags:
         - Usuário
       summary: 'Edita os dados do usuário autenticado'
-      operationId: 9096c93a3a91a723d09c1fb0c1f9db71
+      operationId: 1d5a34df27b031edaa374d48a954007c
       requestBody:
         required: true
         content:
@@ -429,11 +391,13 @@ paths:
       security:
         -
           bearerAuth: []
+          userUuid: []
+  /usuario/deletar:
     delete:
       tags:
         - Usuário
       summary: 'Deleta o usuário autenticado'
-      operationId: c22821ed743d1fe670a7ff3a999c1f5f
+      operationId: 74bbaace1c33425420c5a153b5fc54df
       responses:
         '200':
           description: 'Usuário deletado'
@@ -452,6 +416,32 @@ paths:
       security:
         -
           bearerAuth: []
+          userUuid: []
+  /usuario:
+    get:
+      tags:
+        - Usuário
+      summary: 'Lista os dados do usuário autenticado'
+      operationId: 1ee74c0a21f0b1d380b76ab89163a811
+      responses:
+        '200':
+          description: 'Usuário encontrado'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioListResponse'
+        '401':
+          description: 'Não autenticado'
+        '404':
+          description: 'Usuário não encontrado'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        -
+          bearerAuth: []
+          userUuid: []
 components:
   schemas:
     RegisterRequest:
@@ -486,22 +476,6 @@ components:
           type: string
           format: password
           example: 12345678Ab@
-      type: object
-    UsuarioPerfilResource:
-      properties:
-        id_usuario:
-          type: integer
-          example: 1
-        UUID:
-          type: string
-          example: e04230085f34fcdc518137ac826725
-        nome:
-          type: string
-          example: 'Luiz Felipe'
-        email:
-          type: string
-          format: email
-          example: teste@email.com
       type: object
     LoginDetailResource:
       properties:
@@ -545,23 +519,6 @@ components:
           example: true
         detail:
           $ref: '#/components/schemas/LoginDetailResource'
-      type: object
-    PerfilResponse:
-      properties:
-        success:
-          type: boolean
-          example: true
-        detail:
-          properties:
-            mensagem:
-              type: string
-              example: 'Perfil acessado com sucesso'
-            id_usuario:
-              type: integer
-              example: 1
-            usuario:
-              $ref: '#/components/schemas/UsuarioPerfilResource'
-          type: object
       type: object
     ErrorResponse:
       properties:
@@ -679,25 +636,17 @@ components:
           type: integer
           example: 10
       type: object
-    LivroCreateResponse:
+    LivroListRequest:
+      required:
+        - page
+        - limit
       properties:
-        mensagem:
-          type: string
-          example: 'Livro criado com sucesso'
-        id:
+        page:
           type: integer
-          example: 10
-      type: object
-    LivroUpdateResponse:
-      properties:
-        mensagem:
-          type: string
-          example: 'Livro atualizado com sucesso'
-        detail:
-          properties:
-            livro:
-              $ref: '#/components/schemas/LivroResource'
-          type: object
+          example: 1
+        limit:
+          type: integer
+          example: 5
       type: object
     LivroListResponse:
       properties:
@@ -722,6 +671,26 @@ components:
                   type: integer
                   example: 3
               type: object
+          type: object
+      type: object
+    LivroCreateResponse:
+      properties:
+        mensagem:
+          type: string
+          example: 'Livro criado com sucesso'
+        id:
+          type: integer
+          example: 10
+      type: object
+    LivroUpdateResponse:
+      properties:
+        mensagem:
+          type: string
+          example: 'Livro atualizado com sucesso'
+        detail:
+          properties:
+            livro:
+              $ref: '#/components/schemas/LivroResource'
           type: object
       type: object
     UsuarioFotoRequest:
