@@ -19,7 +19,7 @@ class Senha {
 
     //invalidar tokens antigos
     $query = "UPDATE {$this->table}
-    SET usado = 1,
+    SET usado = 1
     WHERE usuario_id =  :usuario_id";
 
     $stmt = $this->conn->prepare($query);

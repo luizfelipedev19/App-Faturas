@@ -18,7 +18,7 @@ class SenhaController extends BaseController
 
     public function __construct(PDO $db)
     {
-        parent::__construct();
+        parent::__construct(false);
         $this->usuarioModel = new Usuarios($db);
         $this->senhaModel = new Senha($db);
         $this->db = $db;

@@ -33,9 +33,9 @@ class Database
             $this->conn->exec("SET time_zone = '-03:00'");
 
         } catch (PDOException $e) {
+            error_log("Erro na conexão com o banco de dados: " . $e->getMessage());
             echo json_encode([
-                "erro" => "Erro na conexão com o banco de dados LivoAPI",
-                "detalhes" => $e->getMessage()
+                "erro" => "Erro na conexão com o banco de dados LivoAPI"
             ]);
         }
         return $this->conn;
