@@ -3,7 +3,7 @@ version: '3.8'
 services:
   app:
     build: .
-    container_name: api_livros_app
+    container_name: i_livros_appap
     ports:
       - "8080:80"
     volumes:
