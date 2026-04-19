@@ -18,7 +18,7 @@ class JwtHandler
         $this->iss = $_ENV['JWT_ISS'];
     }
 
-    public function gerarToken(array $usuario): string
+    public function generateToken(array $user): string
     {
 
     //removi o exp do token
@@ -27,17 +27,17 @@ class JwtHandler
             "type" => "access",
             "iat" => time(),
             "data" => [
-                "id_usuario" => $usuario["id_usuario"],
-                "nome" => $usuario["nome"],
-                "email" => $usuario["email"],
-                "UUID" => $usuario["UUID"]
+                "user_id" => $user["user_id"],
+                "name" => $user["name"],
+                "email" => $user["email"],
+                "uuid" => $user["uuid"]
             ]
         ];
 
         return JWT::encode($payload, $this->secret, $this->alg);
     }
 
-    public function validarToken(string $token): object
+    public function validateToken(string $token): object
     {
         return JWT::decode($token, new Key($this->secret, $this->alg));
     }

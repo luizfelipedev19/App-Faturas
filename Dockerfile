@@ -1,7 +1,9 @@
 FROM php:8.2-apache
 
-RUN apt-get update && apt-get install -y unzip git curl \
-    && docker-php-ext-install pdo pdo_mysql mysqli \
+RUN apt-get update && apt-get install -y \
+    unzip git curl \
+    libpq-dev \
+    && docker-php-ext-install pdo pdo_pgsql pgsql \
     && a2enmod rewrite
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -14,6 +16,6 @@ RUN composer install
 
 RUN chown -R www-data:www-data /var/www/html
 
-RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
+RUN sed -i '/<Directory \/var\/www\/html>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
 
 EXPOSE 80

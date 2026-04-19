@@ -1,13 +1,13 @@
 <?php
 
-class LoginDTO {
+class LoginUserDTO {
     public string $email;
-    public string $senha;
+    public string $password;
 
     public function __construct(array $data)
     {
         $this->email = trim($data['email'] ?? '');
-        $this->senha = trim($data['senha'] ?? '');
+        $this->password = trim($data['password'] ?? '');
 
         $this->validar();
     }
@@ -21,7 +21,7 @@ class LoginDTO {
             throw new Exception("Email inválido");
         }
 
-        if($this->senha === ''){
+        if($this->password === ''){
             throw new Exception("Senha é obrigatório");
         }
     }

@@ -3,7 +3,7 @@ version: '3.8'
 services:
   app:
     build: .
-    container_name: i_livros_appap
+    container_name: api_faturas_app
     ports:
       - "8080:80"
     volumes:
@@ -11,40 +11,39 @@ services:
     depends_on:
       - db
     networks:
-      - api_livros_net
+      - api_faturas_net
 
   db:
-    image: mysql:8.0
-    container_name: api_livros_db
+    image: postgres:16
+    container_name: api_faturas_db
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: api_livros
-      MYSQL_USER: apiuser
-      MYSQL_PASSWORD: apipass
+      POSTGRES_DB: faturas
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "BUD69{@rg#3^"
     ports:
-      - "3308:3306"
+      - "5440:5432"
     volumes:
-      - db_data:/var/lib/mysql
+      - db_data:/var/lib/postgresql/data
     networks:
-      - api_livros_net
+      - api_faturas_net
 
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    container_name: api_livros_phpmyadmin
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: api_faturas_pgadmin
     restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "8082:80"
     depends_on:
       - db
-    environment:
-      PMA_HOST: db
-      MYSQL_ROOT_PASSWORD: root
-    ports:
-      - "8081:80"
     networks:
-      - api_livros_net
+      - api_faturas_net
 
 volumes:
   db_data:
 
 networks:
-  api_livros_net:
+  api_faturas_net:

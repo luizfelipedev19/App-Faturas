@@ -4,14 +4,14 @@ return [
         "method" => "POST",
         "path" => "/register",
         "controller" => "AuthController",
-        "action" => "register",
+        "action" => "registerUser",
         "auth" => false
     ],
     [
         "method" => "POST",
         "path" => "/login",
         "controller" => "AuthController",
-        "action" => "login",
+        "action" => "loginUser",
         "auth" => false
     ],
     [

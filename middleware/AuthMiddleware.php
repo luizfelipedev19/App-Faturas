@@ -4,7 +4,7 @@ require_once __DIR__ . '/../utils/jwt.php';
 class AuthMiddleware
 {
 
-    public static function autenticar(): ?object
+    public static function authenticate(): ?object
     {
 
         $headers = function_exists('getallheaders') ? getallheaders() : [];
@@ -24,6 +24,12 @@ class AuthMiddleware
             echo json_encode(["mensagem" => "Token não enviado"]);
             exit;
         }
+                //  API KEY
+        if (!isset($headers['X-API-KEY']) || $headers['X-API-KEY'] !== $_ENV['API_KEY']) {
+            http_response_code(401);
+            echo json_encode(["erro" => "API Key inválida"]);
+            exit;
+        }
 
         if(!$uuidHeader){
             http_response_code(401);
@@ -35,13 +41,14 @@ class AuthMiddleware
 
         try {
             $jwt = new JwtHandler();
-            $decoded = $jwt->validarToken($token);
+            $decoded = $jwt->validateToken($token);
 
             if(($decoded->type ?? null) !== "access"){
                 http_response_code(401);
                 echo json_encode(["mensagem" => "Token inválido para acesso"]);
                 exit;
             }
+
 
             $uuidToken = $decoded->data->UUID ?? null;
             if(!$uuidToken){

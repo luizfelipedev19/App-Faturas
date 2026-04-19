@@ -42,7 +42,7 @@ foreach ($routes as $route) {
         require_once __DIR__ . "/controllers/{$controllerName}.php";
 
         if ($authRequired) {
-            AuthMiddleware::autenticar();
+            AuthMiddleware::authenticate();
         }
 
         $controller = new $controllerName($db);

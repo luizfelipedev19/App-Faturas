@@ -1,25 +1,26 @@
 <?php
 
 class RegisterUserDTO {
-    public string $nome;
+    public string $name;
     public string $email;
-    public string $senha;
-    public string $senha_hash;
+    public string $password;
+    public string $password_hash;
 
 public function __construct(array $data){
 
-    $this->nome = trim($data['nome'] ?? '');
+    $this->name = trim($data['name'] ?? '');
     $this->email = trim($data['email'] ?? '');
-    $this->senha = trim($data['senha'] ?? '');
+    $this->password = trim($data['password'] ?? '');
 
     $this->validar();
 
-    $this->senha_hash = password_hash($this->senha, PASSWORD_DEFAULT);
+    //criptografando a senha
+    $this->password_hash = password_hash($this->password, PASSWORD_DEFAULT);
 
 }
      private function validar(): void
     {
-        if ($this->nome === '') {
+        if ($this->name === '') {
             throw new Exception('Nome é obrigatório');
         }
 
@@ -31,27 +32,27 @@ public function __construct(array $data){
             throw new Exception('Email inválido');
         }
 
-        if ($this->senha === '') {
+        if ($this->password === '') {
             throw new Exception('Senha é obrigatória');
         }
 
-        if (strlen($this->senha) <= 8) {
+        if (strlen($this->password) <= 8) {
             throw new Exception('A senha deve ter no mínimo 8 caracteres');
         }
 
-        if (!preg_match('/[A-Z]/', $this->senha)) {
+        if (!preg_match('/[A-Z]/', $this->password)) {
             throw new Exception('A senha deve conter pelo menos uma letra maiúscula');
         }
 
-        if (!preg_match('/[a-z]/', $this->senha)) {
+        if (!preg_match('/[a-z]/', $this->password)) {
             throw new Exception('A senha deve conter pelo menos uma letra minúscula');
         }
 
-        if (!preg_match('/[0-9]/', $this->senha)) {
+        if (!preg_match('/[0-9]/', $this->password)) {
             throw new Exception('A senha deve conter pelo menos um número');
         }
 
-        if (!preg_match('/[\W_]/', $this->senha)) {
+        if (!preg_match('/[\W_]/', $this->password)) {
             throw new Exception('A senha deve conter pelo menos um caractere especial');
         }
     }

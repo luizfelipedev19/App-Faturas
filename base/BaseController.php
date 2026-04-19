@@ -17,9 +17,9 @@ public function __construct(bool $authRequired  = true)
     $this->data = json_decode(file_get_contents("php://input"), true) ?? [];
 
     if($authRequired){
-    $usuario = AuthMiddleware::autenticar();
-    $this->user = $usuario;
-    $this->uuid = $usuario->data->UUID ?? null;
+    $user = AuthMiddleware::authenticate();
+    $this->user = $user;
+    $this->uuid = $user->data->UUID ?? null;
     } else {
         $this->user = null;
         $this->uuid = null;
@@ -43,11 +43,11 @@ protected function success(array $data = [], int $code = 200): void {
 }
 
 
-protected function error(string $mensagem, int $code = 400): void {
+protected function error(string $message, int $code = 400): void {
     http_response_code($code);
     echo json_encode([
         "success" => false,
-        "mensagem" => $mensagem
+        "message" => $message
     ]);
 }
 }

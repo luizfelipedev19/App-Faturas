@@ -24,20 +24,22 @@ class Database
         $this->conn = null;
 
         try {
-            $this->conn = new PDO(
-                "mysql:host={$this->host};port={$this->port};dbname={$this->db_name};charset=utf8",
-                $this->username,
-                $this->password,
-            );
-            $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            $this->conn->exec("SET time_zone = '-03:00'");
+    $this->conn = new PDO(
+        "pgsql:host={$this->host};port={$this->port};dbname={$this->db_name};options='--client_encoding=UTF8'",
+        $this->username,
+        $this->password
+    );
 
-        } catch (PDOException $e) {
-            error_log("Erro na conexão com o banco de dados: " . $e->getMessage());
-            echo json_encode([
-                "erro" => "Erro na conexão com o banco de dados LivoAPI"
-            ]);
-        }
+    $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $this->conn->exec("SET TIME ZONE '-03:00'");
+
+} catch (PDOException $e) {
+    echo json_encode([
+        "erro" => "Erro na conexão",
+        "detalhe" => $e->getMessage()
+    ]);
+    exit;
+}
         return $this->conn;
     }
 }

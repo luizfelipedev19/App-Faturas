@@ -20,11 +20,11 @@ mysqli
 
 Infraestrutura necessária:
 Apache
-MySQL 8.0
+Postgres 16
 Composer
 Docker
 Docker Compose
-phpMyAdmin (opcional)
+pgAdmin
 
 Variáveis de ambiente exigidas:
 DB_HOST
